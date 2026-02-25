@@ -34,8 +34,8 @@ def canvas_to_mnist(img_rgba):
     y0, x0 = coords.min(axis=0)
     y1, x1 = coords.max(axis=0)
 
-    # Lägg padding runt bounding box för att inte klippa för tight
-    pad = 10 
+    # Lägg padding runt bounding box för att inte klippa för tight satt på 3 för att mer skapade problem med små 9or och 8or som då tolkades fel
+    pad = 3 
     y0 = max(0, y0 - pad); x0 = max(0, x0 - pad)
     y1 = min(binary.shape[0] - 1, y1 + pad); x1 = min(binary.shape[1] - 1, x1 + pad)
 
@@ -123,7 +123,16 @@ if "pred_history" not in st.session_state:
 if int(mnist_img.sum()) > 0:
     st.markdown(f'Modellen gissade på {y_pred} med {confidence:.2%} säkerhet')
 
+    st.image(mnist_img, caption="Efter preprocessing (28×28)", clamp=True)
+
     col1, col2 = st.columns([2,1])
+
+    #För att hitta felet med 9orna som predikteras som 4or
+    h = mnist_img.shape[0]  # 28
+    upper_sum = mnist_img[:h//2, :].sum()
+    lower_sum = mnist_img[h//2:, :].sum()
+    n_holes, hole_areas = count_holes(mnist_img, ink_thresh=30)
+    st.write("Hål:", n_holes, "Areas:", hole_areas)
 
     # Stapeldiagram
     with col1:
@@ -144,6 +153,7 @@ if int(mnist_img.sum()) > 0:
         # Knappar: spara / töm
         c_save, c_clear = st.columns(2)
 
+    # Sparknappen
     with c_save:
         if st.button("Spara resultat"):
             row = {
@@ -154,11 +164,13 @@ if int(mnist_img.sum()) > 0:
             }
             st.session_state.pred_history.append(row)
 
+    # Töm knappen
     with c_clear:
         if st.button("Töm historik"):
             st.session_state.pred_history = []
 
-# --- tabellen under (alltid) ---
+
+# tabellen för att kunna spara resultatet man väljer att spara
 st.subheader("Sparade resultat")
 if st.session_state.pred_history:
     df = pd.DataFrame(st.session_state.pred_history).iloc[::-1].reset_index(drop=True)
