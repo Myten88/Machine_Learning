@@ -121,54 +121,50 @@ if "pred_history" not in st.session_state:
 
 # Stapeldiagrammet & Top 3 för gissningarna och dess säkerhet
 if int(mnist_img.sum()) > 0:
-    st.markdown(f'Modellen gissade på {y_pred} med {confidence:.2%} säkerhet')
+    if confidence > 0.55:
+        st.markdown(f'Modellen gissade på {y_pred} med {confidence:.2%} säkerhet')
 
-    st.image(mnist_img, caption="Efter preprocessing (28×28)", clamp=True)
+        st.image(mnist_img, caption="Efter preprocessing", clamp=True)
 
-    col1, col2 = st.columns([2,1])
+        col1, col2 = st.columns([2,1])
 
-    #För att hitta felet med 9orna som predikteras som 4or
-    h = mnist_img.shape[0]  # 28
-    upper_sum = mnist_img[:h//2, :].sum()
-    lower_sum = mnist_img[h//2:, :].sum()
-    n_holes, hole_areas = count_holes(mnist_img, ink_thresh=30)
-    st.write("Hål:", n_holes, "Areas:", hole_areas)
+        # Stapeldiagram
+        with col1:
+            fig, ax = plt.subplots(figsize=(5, 3.5), dpi=100)
+            ax.bar(np.arange(10), proba)
+            ax.set_ylim(0, 1)
+            ax.set_xticks(np.arange(10))
+            ax.set_title(f"Fördelningen av gissningarna")
+            st.pyplot(fig, use_container_width=False)
 
-    # Stapeldiagram
-    with col1:
-        fig, ax = plt.subplots(figsize=(5, 3.5), dpi=100)
-        ax.bar(np.arange(10), proba)
-        ax.set_ylim(0, 1)
-        ax.set_xticks(np.arange(10))
-        ax.set_title(f"Fördelningen av gissningarna")
-        st.pyplot(fig, use_container_width=False)
+        # Top 3 med dess säkerhet
+        with col2:
+            top_idx = np.argsort(proba)[::-1][:3]
+            st.markdown("**Top 3:**")
+            for i in top_idx:
+                st.write(f"**{i}** med {proba[i]:.2%} säkerhet")
 
-    # Top 3 med dess säkerhet
-    with col2:
-        top_idx = np.argsort(proba)[::-1][:3]
-        st.markdown("**Top 3:**")
-        for i in top_idx:
-            st.write(f"**{i}** med {proba[i]:.2%} säkerhet")
+            # Knappar: spara / töm
+            c_save, c_clear = st.columns(2)
 
-        # Knappar: spara / töm
-        c_save, c_clear = st.columns(2)
+        # Sparknappen
+        with c_save:
+            if st.button("Spara resultat"):
+                row = {
+                    "Tid": datetime.now().strftime("%H:%M:%S"),
+                    "Pred": int(top_idx[0]), "Säkerhet pred": float(proba[top_idx[0]]),
+                    "Top 2": int(top_idx[1]), "Säkerhet Top 2": float(proba[top_idx[1]]),
+                    "Top 3": int(top_idx[2]), "Säkerhet Top 3": float(proba[top_idx[2]]),
+                }
+                st.session_state.pred_history.append(row)
 
-    # Sparknappen
-    with c_save:
-        if st.button("Spara resultat"):
-            row = {
-                "Tid": datetime.now().strftime("%H:%M:%S"),
-                "Pred": int(top_idx[0]), "Säkerhet pred": float(proba[top_idx[0]]),
-                "Top 2": int(top_idx[1]), "Säkerhet Top 2": float(proba[top_idx[1]]),
-                "Top 3": int(top_idx[2]), "Säkerhet Top 3": float(proba[top_idx[2]]),
-            }
-            st.session_state.pred_history.append(row)
+        # Töm knappen
+        with c_clear:
+            if st.button("Töm historik"):
+                st.session_state.pred_history = []
 
-    # Töm knappen
-    with c_clear:
-        if st.button("Töm historik"):
-            st.session_state.pred_history = []
-
+    else:
+        st.write("Modellen är för osäker för att kunna prediktera. Kontrollera att du verkligen skrivit en siffra mellan 0-9")
 
 # tabellen för att kunna spara resultatet man väljer att spara
 st.subheader("Sparade resultat")
