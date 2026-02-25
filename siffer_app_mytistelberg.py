@@ -1,3 +1,7 @@
+#========================================
+#-------------- Importer ----------------
+#========================================
+
 import streamlit as st
 from streamlit_drawable_canvas import st_canvas
 import numpy as np
@@ -8,6 +12,10 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from datetime import datetime
 
+#=============================================
+#-------------- Pre-procesing ----------------
+#=============================================
+
 # Jag börjar med att förbereda för hanteringen av bilden som kommer ritas genom att skapa en funktion som ska 
 # hantera bilden så som dom gjort i datasetet MNIST, alltså att de har gjort den grayscale, plockat ut de pixlar
 # som är skrivna på (bounding box), resizat de till 20x20 för att sedan lägga det i en tom 28x28 bild och sist ändra så att mittpunkten
@@ -17,6 +25,8 @@ from datetime import datetime
 # än när jag skrev små. Jag kollade och såg att det var mycket mindre ink på de större bilderna än de små och det var då jag la till dilationen. 
 
 def canvas_to_mnist(img_rgba):
+    """Hantering av canvas bild till rätt format för modellen"""
+
     # Konvertera RGBA -> grayscale
     gray = cv2.cvtColor(img_rgba, cv2.COLOR_RGBA2GRAY)
 
@@ -34,7 +44,7 @@ def canvas_to_mnist(img_rgba):
     y0, x0 = coords.min(axis=0)
     y1, x1 = coords.max(axis=0)
 
-    # Lägg padding runt bounding box för att inte klippa för tight satt på 3 för att mer skapade problem med små 9or och 8or som då tolkades fel
+    # Lägg padding runt bounding box för att inte klippa för tight satt på 3 för mindre klippte vissa siffor och mer skapade problem med små 9or och 8or som då tolkades fel
     pad = 3 
     y0 = max(0, y0 - pad); x0 = max(0, x0 - pad)
     y1 = min(binary.shape[0] - 1, y1 + pad); x1 = min(binary.shape[1] - 1, x1 + pad)
@@ -80,11 +90,13 @@ def canvas_to_mnist(img_rgba):
 # Gör en funktion för ladda in modellen - detta för att jag då kan använda @st.cache_resource vilket ökar prestandan då den sparar det i cachen.
 @st.cache_resource
 def load_model(): 
+    """Laddar modellen till cachen för snabbare hantering"""
     return joblib.load('rbf_svc_clf_proba_best.joblib')
 
+#===============================================
+#-------------- Streamlit appen ----------------
+#===============================================
 
-
-# ------------------------ Här börjar själva Streamlit-appen -------------------------------- 
 st.title("Skriv en siffra och låt modellen gissa")
 st.markdown("""Här nere kan du rita en siffra mellan 0-9 och modellen gissar vilken siffra du skrev.
             Ju finare du skriver desto lättare kommer modellen kunna gissa. """)
@@ -119,7 +131,7 @@ confidence = proba[y_pred]
 if "pred_history" not in st.session_state:
     st.session_state.pred_history = []
 
-# Stapeldiagrammet & Top 3 för gissningarna och dess säkerhet
+# Stapeldiagrammet & Top 3 för gissningarna och dess säkerhet samt knappar för spara resultatet till tabell eller tömma tabellen
 if int(mnist_img.sum()) > 0:
     if confidence > 0.55:
         st.markdown(f'Modellen gissade på {y_pred} med {confidence:.2%} säkerhet')
