@@ -104,7 +104,7 @@ st.markdown("""Här nere kan du rita en siffra mellan 0-9 och modellen gissar vi
 # Gör en canvas som siffran ska skrivas i:
 canvas_result = st_canvas(
     fill_color='black',
-    stroke_width=(5),
+    stroke_width=(15), #Hade 5 tidigare men alla andra i presentationen hade mycket större penna så jag testar det också 
     stroke_color='black',
     background_color='white',
     update_streamlit=True,
