@@ -133,7 +133,7 @@ if "pred_history" not in st.session_state:
 
 # Stapeldiagrammet & Top 3 för gissningarna och dess säkerhet samt knappar för spara resultatet till tabell eller tömma tabellen
 if int(mnist_img.sum()) > 0:
-    if confidence > 0.55:
+    if confidence > 0.30:
         st.markdown(f'Modellen gissade på {y_pred} med {confidence:.2%} säkerhet')
 
         st.image(mnist_img, caption="Efter preprocessing", clamp=True)
